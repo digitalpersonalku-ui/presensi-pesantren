@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id           String   @id @default(cuid())
+  nama         String
+  email        String   @unique
+  password     String
+  role         String   @default("STAF")
+  nip          String?  @unique
+  jabatan      String?
+  foto         String?
+  faceData     String?  // JSON encoded face descriptor
+  qrCode       String?  @unique
+  aktif        Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  absensi      Absensi[]
+  izin         Izin[]
+}
+
+model Absensi {
+  id           String        @id @default(cuid())
+  userId       String
+  user         User          @relation(fields: [userId], references: [id])
+  tanggal      DateTime      @default(now())
+  jamMasuk     DateTime?
+  jamKeluar    DateTime?
+  status       String        @default("HADIR")
+  metode       String        // "WAJAH" | "QRCODE" | "MANUAL"
+  lokasiLat    Float?
+  lokasiLng    Float?
+  lokasiValid  Boolean       @default(false)
+  keterangan   String?
+  createdAt    DateTime      @default(now())
+
+  @@index([userId, tanggal])
+}
+
+model Izin {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  tanggalMulai DateTime
+  tanggalAkhir DateTime
+  jenis        String   // "IZIN" | "SAKIT" | "CUTI"
+  alasan       String
+  lampiran     String?
+  disetujui    Boolean?
+  disetujuiOleh String?
+  createdAt    DateTime @default(now())
+}
+
+model Pengaturan {
+  id           String   @id @default(cuid())
+  kunci        String   @unique
+  nilai        String
+  updatedAt    DateTime @updatedAt
+}
