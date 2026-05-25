@@ -5,14 +5,19 @@ import { prisma } from '@/lib/db'
 import bcrypt from 'bcryptjs'
 import { randomUUID } from 'crypto'
 
-export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(
+  _: NextRequest, 
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params
   const session = await getServerSession(authOptions)
+  
   if (!session?.user || (session.user as any).role !== 'ADMIN') {
     return NextResponse.json({ pesan: 'Tidak diizinkan' }, { status: 403 })
   }
 
   const user = await prisma.user.findUnique({
-    where: { id: params.id },
+    where: { id: id },
     select: {
       id: true, nama: true, email: true, nip: true,
       jabatan: true, role: true, aktif: true, qrCode: true,
@@ -25,8 +30,13 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
   return NextResponse.json({ user })
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(
+  req: NextRequest, 
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params
   const session = await getServerSession(authOptions)
+  
   if (!session?.user || (session.user as any).role !== 'ADMIN') {
     return NextResponse.json({ pesan: 'Tidak diizinkan' }, { status: 403 })
   }
@@ -42,16 +52,21 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (body.faceData !== undefined) updateData.faceData = body.faceData
   if (body.regenerateQr) updateData.qrCode = randomUUID()
 
-  const user = await prisma.user.update({ where: { id: params.id }, data: updateData })
+  const user = await prisma.user.update({ where: { id: id }, data: updateData })
   return NextResponse.json({ pesan: 'Data berhasil diperbarui', qrCode: user.qrCode })
 }
 
-export async function DELETE(_: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(
+  _: NextRequest, 
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params
   const session = await getServerSession(authOptions)
+  
   if (!session?.user || (session.user as any).role !== 'ADMIN') {
     return NextResponse.json({ pesan: 'Tidak diizinkan' }, { status: 403 })
   }
 
-  await prisma.user.update({ where: { id: params.id }, data: { aktif: false } })
+  await prisma.user.update({ where: { id: id }, data: { aktif: false } })
   return NextResponse.json({ pesan: 'Staf dinonaktifkan' })
 }
